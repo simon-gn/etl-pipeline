@@ -1,4 +1,4 @@
-# ETL-pipeline (WIP)
+# ETL pipeline (WIP)
 
 An ETL pipeline with a visual sales dashboard, built with Flask (Backend) and React (Frontend), using a cloud-hosted PostgreSQL database on AWS.
 
