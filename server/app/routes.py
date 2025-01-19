@@ -1,9 +1,19 @@
 from flask import Blueprint, jsonify
-from scripts.database import get_db_connection
-from sqlalchemy import text
+from flask import jsonify
+from sqlalchemy import func
+from sqlalchemy.exc import SQLAlchemyError
+from scripts.database import get_session
+from models.models import (
+    Orders,
+    OrderItems,
+    Products,
+    Shipping,
+    States,
+    PostalCodes,
+)
+
 
 api = Blueprint("api", __name__)
-engine = get_db_connection()
 
 
 @api.route("/", methods=["GET"])
@@ -13,131 +23,199 @@ def get_homepage():
 
 @api.route("/api/sales", methods=["GET"])
 def get_sales():
-    query = text(
-        """
-        SELECT * FROM sales_data
-        WHERE "Amount" IS NOT NULL
-        LIMIT 100;
-        """
-    )
-    return query_table(query, "saled_data")
+    try:
+        with get_session() as session:
+            results = (
+                session.query(
+                    Orders.order_id,
+                    Orders.date,
+                    Orders.status,
+                    OrderItems.amount,
+                    Products.category,
+                    Shipping.courier_status,
+                )
+                .join(OrderItems, Orders.order_id == OrderItems.order_id)
+                .join(Products, OrderItems.sku == Products.sku)
+                .join(Shipping, Orders.order_id == Shipping.order_id)
+                .filter(
+                    OrderItems.amount.isnot(None), OrderItems.amount != float("nan")
+                )
+                .limit(100)
+                .all()
+            )
+        return jsonify([dict(r) for r in results])
+
+    except SQLAlchemyError as e:
+        print(f"Error fetching sales data: {e}")
+        return jsonify({"error": "An error occurred while fetching sales data"}), 500
 
 
 @api.route("/api/total-revenue", methods=["GET"])
 def get_total_revenue():
-    query = text(
-        """
-            SELECT SUM("Amount") AS total_revenue
-            FROM sales_data
-            WHERE "Status" IN ('Shipped', 'Shipped - Delivered to Buyer')
-                AND "Courier Status" = 'Shipped';
-            """
-    )
-    return query_scalar(query, "total_revenue")
+    try:
+        with get_session() as session:
+            total_revenue = (
+                session.query(func.sum(OrderItems.amount))
+                .join(Orders, Orders.order_id == OrderItems.order_id)
+                .join(Shipping, Orders.order_id == Shipping.order_id)
+                .filter(
+                    Orders.status.in_(["Shipped", "Shipped - Delivered to Buyer"]),
+                    Shipping.courier_status == "Shipped",
+                    OrderItems.amount != float("nan"),
+                )
+                .scalar()
+            )
+        return jsonify({"total_revenue": total_revenue if total_revenue else 0})
+
+    except SQLAlchemyError as e:
+        print(f"Error fetching total revenue: {e}")
+        return (
+            jsonify({"error": "An error occurred while calculating total revenue"}),
+            500,
+        )
 
 
 @api.route("/api/total-orders", methods=["GET"])
 def get_total_orders():
-    query = text(
-        """
-            SELECT COUNT(*) AS total_orders
-            FROM sales_data
-            WHERE "Status" IN ('Shipped', 'Shipped - Delivered to Buyer')
-                AND "Courier Status" = 'Shipped';
-            """
-    )
-    return query_scalar(query, "total_orders")
+    try:
+        with get_session() as session:
+            total_orders = (
+                session.query(func.count(Orders.order_id))
+                .join(Shipping, Orders.order_id == Shipping.order_id)
+                .filter(
+                    Orders.status.in_(["Shipped", "Shipped - Delivered to Buyer"]),
+                    Shipping.courier_status == "Shipped",
+                )
+                .scalar()
+            )
+        return jsonify({"total_orders": total_orders})
+
+    except SQLAlchemyError as e:
+        print(f"Error fetching total orders: {e}")
+        return (
+            jsonify({"error": "An error occurred while calculating total orders"}),
+            500,
+        )
 
 
 @api.route("/api/data-by-category", methods=["GET"])
 def get_data_by_category():
-    query = text(
-        """
-            SELECT "Category",
-                SUM("Amount") AS total_revenue,
-                COUNT(*) AS total_orders
-            FROM sales_data
-            WHERE "Amount" IS NOT NULL
-            GROUP BY "Category"
-            ORDER BY total_revenue DESC;
-            """
-    )
-    return query_table(query, "data_by_category")
+    try:
+        with get_session() as session:
+            results = (
+                session.query(
+                    Products.category,
+                    func.sum(OrderItems.amount).label("total_revenue"),
+                    func.count(Orders.order_id).label("order_count"),
+                )
+                .join(OrderItems, Products.sku == OrderItems.sku)
+                .join(Orders, Orders.order_id == OrderItems.order_id)
+                .filter(
+                    OrderItems.amount.isnot(None), OrderItems.amount != float("nan")
+                )
+                .group_by(Products.category)
+                .order_by(func.sum(OrderItems.amount).desc())
+                .all()
+            )
+            return jsonify(
+                [
+                    {
+                        "category": row[0],
+                        "total_revenue": float(row[1]),
+                        "order_count": row[2],
+                    }
+                    for row in results
+                ]
+            )
+
+    except SQLAlchemyError as e:
+        print(f"Error fetching data by category: {e}")
+        return (
+            jsonify({"error": "An error occurred while fetching data by category"}),
+            500,
+        )
 
 
 @api.route("/api/sales-trend", methods=["GET"])
 def get_sales_trend():
-    query = text(
-        """
-        SELECT DATE_TRUNC('week', "Date"::timestamp) AS week,
-            ROUND(SUM("Amount")::NUMERIC, 2) AS revenue
-        FROM sales_data
-        WHERE "Amount" IS NOT NULL
-        GROUP BY week
-        ORDER BY week;
-    """
-    )
-
     try:
-        with engine.connect() as conn:
-            result = conn.execute(query)
-            sales_trend = [
-                {"x": row[0].strftime("%Y-%m-%d"), "y": row[1]}
-                for row in result.fetchall()
-            ]
-    except Exception as e:
-        print(f"Error fetching sales trend data: {e}")
-        sales_trend = []
+        with get_session() as session:
+            results = (
+                session.query(
+                    func.date_trunc("week", Orders.date).label("Week"),
+                    func.coalesce(func.sum(OrderItems.amount), 0),
+                )
+                .join(Orders, Orders.order_id == OrderItems.order_id)
+                .join(Shipping, Orders.order_id == Shipping.order_id)
+                .filter(
+                    OrderItems.amount.isnot(None),
+                    OrderItems.amount != float("nan"),
+                    Orders.status.in_(["Shipped", "Shipped - Delivered to Buyer"]),
+                    Shipping.courier_status == "Shipped",
+                )
+                .group_by("Week")
+                .order_by("Week")
+                .all()
+            )
 
-    return jsonify(sales_trend)
+        sales_trend = [
+            {"x": row[0].strftime("%Y-%m-%d"), "y": row[1]} for row in results
+        ]
+        return jsonify(sales_trend)
+
+    except SQLAlchemyError as e:
+        print(f"Error fetching sales trend: {e}")
+        return (
+            jsonify({"error": "An error occurred while fetching sales trend data"}),
+            500,
+        )
 
 
 @api.route("/api/shipping-status-breakdown", methods=["GET"])
 def get_shipping_status_breakdown():
-    query = text(
-        """
-        SELECT "Courier Status" AS CourierStatus, COUNT(*) AS order_count
-        FROM sales_data
-        WHERE "Courier Status" IS NOT NULL
-        GROUP BY "Courier Status"
-        ORDER BY order_count DESC;
-    """
-    )
-    return query_table(query, "shipping_status")
+    try:
+        with get_session() as session:
+            results = (
+                session.query(Shipping.courier_status, func.count(Shipping.order_id))
+                .group_by(Shipping.courier_status)
+                .order_by(func.count(Shipping.order_id).desc())
+                .all()
+            )
+
+        shipping_status_breakdown = [
+            {"courier_status": row[0], "order_count": row[1]} for row in results
+        ]
+        return jsonify(shipping_status_breakdown)
+
+    except SQLAlchemyError as e:
+        print(f"Error fetching shipping status breakdown: {e}")
+        return (
+            jsonify(
+                {"error": "An error occurred while fetching shipping status breakdown"}
+            ),
+            500,
+        )
 
 
 @api.route("/api/top-regions", methods=["GET"])
 def get_top_regions():
-    query = text(
-        """
-        SELECT "ship-state" AS Region, COUNT(*) AS order_count
-        FROM sales_data
-        WHERE "ship-state" IS NOT NULL
-        GROUP BY "ship-state"
-        ORDER BY order_count DESC
-        LIMIT 10;
-    """
-    )
-    return query_table(query, "top-regions")
-
-
-def query_scalar(query, name):
     try:
-        with engine.connect() as conn:
-            result = conn.execute(query).scalar()
-            result = result if result is not None else 0
-    except Exception as e:
-        print(f"Error querying {name}: {e}")
-        result = 0
-    return jsonify({name: result})
+        with get_session() as session:
+            results = (
+                session.query(States.ship_state, func.count(Shipping.order_id))
+                .join(PostalCodes, States.ship_state == PostalCodes.ship_state)
+                .join(
+                    Shipping, PostalCodes.ship_postal_code == Shipping.ship_postal_code
+                )
+                .group_by(States.ship_state)
+                .order_by(func.count(Shipping.order_id).desc())
+                .limit(10)
+                .all()
+            )
 
+        top_regions = [{"region": row[0], "order_count": row[1]} for row in results]
+        return jsonify(top_regions)
 
-def query_table(query, name):
-    try:
-        with engine.connect() as conn:
-            result = conn.execute(query)
-            data = [dict(row) for row in result.mappings()]
-    except Exception as e:
-        print(f"Error querying {name}: {e}")
-        data = []
-    return data
+    except SQLAlchemyError as e:
+        print(f"Error fetching top regions: {e}")
+        return jsonify({"error": "An error occurred while fetching top regions"}), 500
