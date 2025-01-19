@@ -9,9 +9,9 @@ const ShippingStatusChart = () => {
       .then((response) => response.json())
       .then((data) => {
         if (data) {
-          const formattedData = data.map(({ courierstatus, order_count }) => ({
-            id: courierstatus,
-            label: courierstatus,
+          const formattedData = data.map(({ courier_status, order_count }) => ({
+            id: courier_status,
+            label: courier_status,
             value: order_count,
           }));
           setShippingStatusData(formattedData);

@@ -19,7 +19,7 @@ const CategoryChart = () => {
       <ResponsiveBar
         data={categoryData}
         keys={["total_revenue"]}
-        indexBy="Category"
+        indexBy="category"
         margin={{ top: 30, right: 20, bottom: 80, left: 70 }}
         padding={0.3}
         colors={{ scheme: "paired" }}
