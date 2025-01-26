@@ -34,8 +34,6 @@ def clean_data(raw_data):
     data["ship_city"] = data["ship_city"].str.title()
     data["ship_state"] = data["ship_state"].str.title()
 
-    # data.loc[data["ship_postal_code"] == 411019.0, "ship_city"] = "Pune"
-
     return data
 
 
