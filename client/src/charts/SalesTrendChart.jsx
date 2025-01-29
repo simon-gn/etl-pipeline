@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { ResponsiveLine } from "@nivo/line";
 import { abbreviateNumber } from "../utils/formattingUtils";
+import { apiFetch } from "../services/api";
 
 const SalesTrendChart = () => {
   const [salesTrendData, setSalesTrendData] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/sales-trend")
-      .then((response) => response.json())
+    apiFetch("/sales-trend")
       .then((data) => {
         if (data) {
           const formattedData = [

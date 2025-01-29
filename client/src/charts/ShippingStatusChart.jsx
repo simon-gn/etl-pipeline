@@ -1,12 +1,12 @@
 import { ResponsivePie } from "@nivo/pie";
 import { useState, useEffect } from "react";
+import { apiFetch } from "../services/api";
 
 const ShippingStatusChart = () => {
   const [shippingStatusData, setShippingStatusData] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/shipping-status-breakdown")
-      .then((response) => response.json())
+    apiFetch("/shipping-status-breakdown")
       .then((data) => {
         if (data) {
           const formattedData = data.map(({ courier_status, order_count }) => ({
