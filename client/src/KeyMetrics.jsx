@@ -1,17 +1,16 @@
 import { useEffect, useState } from "react";
+import { apiFetch } from "./services/api";
 
 const KeyMetrics = () => {
   const [totalRevenue, setTotalRevenue] = useState([]);
   const [totalOrders, setTotalOrders] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/total-revenue")
-      .then((response) => response.json())
+    apiFetch("/total-revenue")
       .then((data) => setTotalRevenue(data.total_revenue))
       .catch((error) => console.error("Error fetching total revenue:", error));
 
-    fetch("http://localhost:5000/api/total-orders")
-      .then((response) => response.json())
+    apiFetch("/total-orders")
       .then((data) => setTotalOrders(data.total_orders))
       .catch((error) => console.error("Error fetching total orders:", error));
   }, []);

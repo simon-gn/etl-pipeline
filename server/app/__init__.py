@@ -1,9 +1,12 @@
 from flask import Flask
 from flask_cors import CORS
-from dotenv import load_dotenv
 import os
 
-load_dotenv()
+# In development mode
+if os.getenv("DB_URL") == None:
+    from dotenv import load_dotenv
+
+    load_dotenv()
 
 
 def create_app():

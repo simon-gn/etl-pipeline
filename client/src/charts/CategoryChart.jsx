@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { ResponsiveBar } from "@nivo/bar";
 import { abbreviateNumber } from "../utils/formattingUtils";
+import { apiFetch } from "../services/api";
 
 const CategoryChart = () => {
   const [categoryData, setCategoryData] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/data-by-category")
-      .then((response) => response.json())
+    apiFetch("/data-by-category")
       .then((data) => {
         if (data) setCategoryData(data);
       })

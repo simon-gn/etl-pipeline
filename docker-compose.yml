@@ -6,20 +6,13 @@ services:
       - /server/.env
     container_name: backend
     ports:
-      - "5000:5000"
-    volumes:
-      - ./server:/server
+      - "8080:8080"
 
   frontend:
     build:
       context: ./client
     container_name: frontend
     ports:
-      - "5173:5173"
-    environment:
-      NODE_ENV: development
-    volumes:
-      - ./client:/client
-      - /client/node_modules
+      - "80:80"
     stdin_open: true
     tty: true

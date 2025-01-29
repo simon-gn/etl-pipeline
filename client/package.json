@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
+    "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
@@ -13,8 +13,11 @@
     "@nivo/bar": "^0.88.0",
     "@nivo/line": "^0.88.0",
     "@nivo/pie": "^0.88.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@tailwindcss/vite": "^4.0.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "tailwindcss": "^4.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -27,9 +30,6 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.13.0",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.17",
-    "vite": "^6.0.3",
-    "vite-plugin-tailwind": "^0.0.4"
+    "vite": "^6.0.3"
   }
 }

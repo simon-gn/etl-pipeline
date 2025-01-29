@@ -2,13 +2,13 @@ import { ResponsiveBar } from "@nivo/bar";
 import React from "react";
 import { useState, useEffect } from "react";
 import { abbreviateNumber } from "../utils/formattingUtils";
+import { apiFetch } from "../services/api";
 
 const TopRegionsChart = () => {
   const [topRegionsData, setTopRegionsData] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/top-regions")
-      .then((response) => response.json())
+    apiFetch("/top-regions")
       .then((data) => {
         if (data) setTopRegionsData(data);
       })
