@@ -45,8 +45,9 @@ jobs:
 
       - name: Modify Task Definition
         run: |
+          jq 'del(.taskDefinitionArn, .revision, .status, .requiresAttributes, .compatibilities, .registeredAt, .registeredBy)' task-definition.json > filtered-task-definition.json
           jq '(.containerDefinitions[] | select(.name == "server-container").image) = "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_SERVER }}:${{ github.sha }}" |
-              (.containerDefinitions[] | select(.name == "client-container").image) = "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_CLIENT }}:${{ github.sha }}"' task-definition.json > updated-task-definition.json
+              (.containerDefinitions[] | select(.name == "client-container").image) = "${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/${{ secrets.ECR_REPOSITORY_CLIENT }}:${{ github.sha }}"' filtered-task-definition.json > updated-task-definition.json
 
       - name: Register New Task Definition
         run: |
