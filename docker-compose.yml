@@ -1,17 +1,17 @@
 services:
-  backend:
+  server:
     build:
       context: ./server
     env_file:
       - /server/.env
-    container_name: backend
+    container_name: server
     ports:
       - "8080:8080"
 
-  frontend:
+  client:
     build:
       context: ./client
-    container_name: frontend
+    container_name: client
     ports:
       - "80:80"
     stdin_open: true
