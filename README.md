@@ -6,7 +6,7 @@ This project is an **ETL pipeline** that processes and visualizes sales data, pr
 ### Key Features
 - **Backend (Flask)**: The backend is built using Flask, providing an API that handles data processing, database interactions, and more.
 - **Frontend (React)**: The frontend is a modern React application that communicates with the backend API to visualize data and present it in a user-friendly manner.
-- **PostgreSQL Database**: The project uses **PostgreSQL** hosted on AWS for storing and querying the processed data.
+- **Database (PostgreSQL)**: The project uses **PostgreSQL** hosted on AWS for storing and querying the processed data.
 
 ### Recent Updates
 - **Dockerization**: The entire project (both the frontend and backend) has been containerized using **Docker**. This enables easy deployment, scaling, and consistency across environments by encapsulating the application into isolated containers.
@@ -17,7 +17,7 @@ This project is an **ETL pipeline** that processes and visualizes sales data, pr
 
 ### Technologies Used:
 - **Backend**: Flask, Python
-- **Frontend**: React
+- **Frontend**: React, Nginx
 - **Database**: PostgreSQL (hosted on AWS RDS)
 - **Cloud Infrastructure**: AWS (ECS, ECR, Fargate, RDS)
 - **Containerization**: Docker
@@ -25,13 +25,13 @@ This project is an **ETL pipeline** that processes and visualizes sales data, pr
 
 ### How It Works:
 1. **ETL Pipeline**: 
-    - Data is extracted from a source (e.g., CSV files, API, etc.).
+    - Data is extracted from a source (CSV files for now).
     - The data is transformed, cleaned, and processed in the backend.
     - The data is loaded into the PostgreSQL database, ready to be queried.
    
 2. **Frontend Dashboard**: 
     - The React frontend fetches data from the Flask backend and presents the processed sales data through charts and graphs.
-    - The dashboard is interactive and allows users to filter and visualize the data based on various parameters.
+    - The dashboard is interactive and will allow users to filter and visualize the data based on various parameters in the near future.
 
 3. **Docker & AWS Deployment**:
     - Both the backend and frontend are Dockerized and pushed to **Amazon ECR**.
